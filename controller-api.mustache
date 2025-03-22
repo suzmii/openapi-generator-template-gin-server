@@ -24,14 +24,13 @@ func {{nickname}}(c *gin.Context) {
 
 	{{#headerParams}}
 	{{paramName}} := c.GetHeader("{{baseName}}")
-	{{#required}}
 	if {{paramName}} == "" {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Code:    http.StatusBadRequest,
 			Message: "Missing required header '{{baseName}}'",
 		})
 		return
-	}{{/required}}
+	}
 	{{/headerParams}}
 
 	{{#bodyParam}}
@@ -43,6 +42,12 @@ func {{nickname}}(c *gin.Context) {
 		})
 		return
 	}{{/bodyParam}}
+
+	{{#responses}}
+	{{#dataType}}
+	type Response = {{dataType}}
+	{{/dataType}}
+	{{/responses}}
 
 	// TODO: 业务逻辑实现
 	// c.JSON(http.StatusOK, response)
