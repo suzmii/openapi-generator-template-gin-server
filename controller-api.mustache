@@ -1,49 +1,50 @@
 {{>partial_header}}
 package {{packageName}}
 
-import (
-	"github.com/gin-gonic/gin"
-	"net/http"
-)
-
-type ErrorResponse struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-}
-
 {{#operations}}
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
 {{#operation}}
-// {{httpMethod}} {{{basePathWithoutHost}}}{{{path}}}{{#summary}}
-// {{{.}}}{{/summary}}
-{{#isDeprecated}}
-// Deprecated
-{{/isDeprecated}}
+
+// {{nickname}} - {{{summary}}}
 func {{nickname}}(c *gin.Context) {
-	{{#pathParams.0}}// ==== 路径参数处理 ====
-	{{/pathParams.0}}{{#pathParams}}
-	{{paramName}} := c.Param("{{baseName}}") // 路径参数 {{baseName}}
+	{{#pathParams}}
+	{{paramName}} := c.Param("{{baseName}}")
+	if {{paramName}} == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Code:    http.StatusBadRequest,
+			Message: "Missing required parameter '{{baseName}}'",
+		})
+		return
+	}
 	{{/pathParams}}
-	{{#bodyParams.0}}// ==== 校验请求 ====
-	{{/bodyParams.0}}{{#bodyParam}}var req {{dataType}}
+
+	{{#headerParams}}
+	{{paramName}} := c.GetHeader("{{baseName}}")
+	{{#required}}
+	if {{paramName}} == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Code:    http.StatusBadRequest,
+			Message: "Missing required header '{{baseName}}'",
+		})
+		return
+	}{{/required}}
+	{{/headerParams}}
+
+	{{#bodyParam}}
+	var req {{dataType}}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Code:    http.StatusBadRequest,
 			Message: "Invalid request body",
 		})
 		return
-	}
-	
-	{{/bodyParam}}
-	// TODO: 业务代码
+	}{{/bodyParam}}
 
-	// ==== 响应 ====
-	{{#responses}}
-	{{#dataType}}
-	var response {{dataType}}
-	{{/dataType}}
-	{{/responses}}
-	
-	c.JSON(http.StatusOK, response)
-}
-{{/operation}}
+	// TODO: 业务逻辑实现
+	// c.JSON(http.StatusOK, response)
+}{{/operation}}
 {{/operations}}
