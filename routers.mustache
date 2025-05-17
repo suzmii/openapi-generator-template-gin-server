@@ -24,6 +24,21 @@ type ErrorResponse struct {
 	Message string      `json:"message"`
 }
 
+// bindParams 统一处理 path, header 和 query 参数
+func bindParams(c *gin.Context, params interface{}) error {
+	if err := c.ShouldBindUri(params); err != nil {
+		return err
+	}
+	if err := c.ShouldBindHeader(params); err != nil {
+		return err
+	}
+	if err := c.ShouldBindQuery(params); err != nil {
+		return err
+	}
+	return nil
+}
+
+
 // Routes is the list of the generated Route.
 type Routes []Route
 

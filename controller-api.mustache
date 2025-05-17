@@ -4,44 +4,45 @@ package {{packageName}}
 {{#operations}}
 import (
 	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 {{#operation}}
 
 // {{nickname}} - {{{summary}}}
 func {{nickname}}(c *gin.Context) {
-	{{#pathParams}}
-	{{paramName}} := c.Param("{{baseName}}")
-	if {{paramName}} == "" {
+	{{#hasParams}}
+	// 解析参数（仅当存在 path/header/query 参数时生成）
+	var params struct {
+		{{#pathParams}}
+		{{paramName}} string `path:"{{baseName}}"`
+		{{/pathParams}}
+		{{#headerParams}}
+		{{paramName}} string `header:"{{baseName}}"`
+		{{/headerParams}}
+		{{#queryParams}}
+		{{paramName}} string `query:"{{baseName}}"`
+		{{/queryParams}}
+	}
+	if err := bindParams(c, &params); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Code:    http.StatusBadRequest,
-			Message: "Missing required parameter '{{baseName}}'",
+			Message: err.Error(),
 		})
 		return
 	}
-	{{/pathParams}}
-
-	{{#headerParams}}
-	{{paramName}} := c.GetHeader("{{baseName}}")
-	if {{paramName}} == "" {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: "Missing required header '{{baseName}}'",
-		})
-		return
-	}
-	{{/headerParams}}
+	{{/hasParams}}
 
 	{{#bodyParam}}
-	var req {{dataType}}
-	if err := c.ShouldBindJSON(&req); err != nil {
+	// 解析请求体
+	var request {{dataType}}
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Code:    http.StatusBadRequest,
 			Message: "Invalid request body",
 		})
 		return
-	}{{/bodyParam}}
+	}
+	{{/bodyParam}}
 
 	{{#responses}}
 	{{#dataType}}
@@ -49,7 +50,7 @@ func {{nickname}}(c *gin.Context) {
 	{{/dataType}}
 	{{/responses}}
 
-	// TODO: 业务逻辑实现
-	// c.JSON(http.StatusOK, response)
-}{{/operation}}
+	// TODO: 业务逻辑
+}
+{{/operation}}
 {{/operations}}
